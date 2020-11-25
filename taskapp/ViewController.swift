@@ -12,33 +12,36 @@ import UserNotifications
 
 class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource, UISearchBarDelegate {
     
+    @IBOutlet weak var actionSearchBar: UISearchBar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var searchBar: UISearchBar!
     
+    let tapGesture: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action:#selector(dismissKeyboard))
+    
     //Realmのインスタンスを取得する
     let realm = try! Realm()
-    
+
     //DB内のタスクが格納されるリスト
     //日付の近い順でソート：昇順
     //以降内容をアップデートするとリスト内は自動的に更新される。
     
     var taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
-
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-
-        let tapGesture: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action:#selector(dismissKeyboard))
-        self.view.addGestureRecognizer(tapGesture)
         
         tableView.delegate = self
         tableView.dataSource = self
         searchBar.delegate = self
+        
     }
+
     
     @objc func dismissKeyboard() {
         self.view.endEditing(true)
+        print("DEBUG_PRINT: dismissKeyboard() が呼ばれました")
     }
     
     //データの数(＝セルの数)を返すメソッド
@@ -76,7 +79,6 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     func tableView(_ tableView: UITableView, editingStyleForAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
         return .delete
     }
-    
     
     //Delete　ボタンが押された時に呼ばれるメソッド
     func tableView(_ tableView: UITableView,commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -123,7 +125,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         } else {
             let task = Task()
             
-            let allTasks  = realm.objects(Task.self)
+            let allTasks = realm.objects(Task.self)
             if allTasks.count != 0 {
                 task.id = allTasks.max(ofProperty: "id")! + 1
             }
@@ -132,7 +134,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         }
         
     }
-    
+
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -141,10 +143,12 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         self.dismissKeyboard()
-        let allTasks  = realm.objects(Task.self)
-        
     }
     
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        self.view.addGestureRecognizer(tapGesture)
+        print("DEBUG_PRINT: begin editing")
+    }
 
 }
 
