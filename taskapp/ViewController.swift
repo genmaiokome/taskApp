@@ -12,11 +12,13 @@ import UserNotifications
 
 class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource, UISearchBarDelegate {
     
+    var tapGesture:UITapGestureRecognizer!
+    
     @IBOutlet weak var actionSearchBar: UISearchBar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var searchBar: UISearchBar!
     
-    let tapGesture: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action:#selector(dismissKeyboard))
+
     
     //Realmのインスタンスを取得する
     let realm = try! Realm()
@@ -36,13 +38,21 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         tableView.dataSource = self
         searchBar.delegate = self
         
+        tapGesture = UITapGestureRecognizer(target: self, action:#selector(dismissKeyboard))
+        self.view.addGestureRecognizer(tapGesture)
     }
 
     
     @objc func dismissKeyboard() {
         self.view.endEditing(true)
+        self.view.removeGestureRecognizer(tapGesture)
+        if searchBar.text == "" {
+            taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
+            tableView.reloadData()
+        }
         print("DEBUG_PRINT: dismissKeyboard() が呼ばれました")
     }
+    
     
     //データの数(＝セルの数)を返すメソッド
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -138,6 +148,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.view.addGestureRecognizer(tapGesture)
         tableView.reloadData()
     }
     
@@ -147,7 +158,19 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         self.view.addGestureRecognizer(tapGesture)
-        print("DEBUG_PRINT: begin editing")
+
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        let searchBarText = searchBar.text!
+        if searchBarText != "" {
+            let predicate = NSPredicate(format: "category = %@",searchBarText)
+            taskArray = realm.objects(Task.self).filter(predicate).sorted(byKeyPath: "date", ascending: true)
+            tableView.reloadData()
+        }else{
+            taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: true)
+            tableView.reloadData()
+        }
     }
 
 }
